@@ -5,52 +5,37 @@ import open from 'open';
 import { exec } from 'child_process';
 import puppeteer from 'puppeteer';
 
-
 const program = new Command();
-const login_zid = 'https://web.zid.sa/login';
-const home_zid = 'https://web.zid.sa/home';
 const storeFilePath = './store.json';
+const Home_zid = 'https://web.zid.sa/home';
+const theme_market = 'https://web.zid.sa/theme-market';
 
 let storeNameData;
 
-async function readStoreAndOpen() {
+// async function readStoreAndOpen() {
+//         try {
+//                 const data = await fs.promises.readFile(storeFilePath, 'utf8');
+//                 storeNameData = JSON.parse(data);
+//                 await open(storeNameData.storeName);
+//                 return storeNameData.storeName;
+//         } catch (err) {
+//                 console.error('Error reading the store file:', err);
+//         }
+// }
+async function connectToExistingBrowser(url) {
+        let browser;
         try {
-                const data = await fs.promises.readFile(storeFilePath, 'utf8');
-                storeNameData = JSON.parse(data);
-
-                // فتح الرابط باستخدام المتصفح الافتراضي للنظام
-                await open(storeNameData.storeName);
-                console.log('Opened store page...');
-        } catch (err) {
-                console.error('Error reading the store file:', err);
+                browser = await puppeteer.launch({
+                        executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
+                        headless: false,
+                });
+                const page = await browser.newPage();
+                await page.goto(url);
+                console.log('theme market in opened');
+        } catch (error) {
+                console.error('Error connecting to the browser:', error);
         }
 }
-function waitForPageLoad(url) {
-        return new Promise(async (resolve, reject) => {
-                try {
-                        const browser = await puppeteer.launch({
-                                headless: true, executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe'
-                        });
-                        const page = await browser.newPage();
-                        // افتح الرابط وانتظر حتى تحميل الصفحة بالكامل
-                        await page.goto(url, { waitUntil: 'load' });
-
-                        console.log('Page loaded successfully');
-
-                        console.log('Page loaded:', url);
-                        await browser.close();
-
-                        resolve();  // اكمل العملية بعد تحميل الصفحة
-                } catch (error) {
-                        reject('Error loading the page: ' + error.message);
-                }
-        });
-}
-
-program
-        .name('zidbush')
-        .description('A CLI tool for managing ZID datasets')
-        .version('1.0.0');
 
 program.command('login')
         .alias('l')
@@ -84,11 +69,15 @@ program.command('login')
                         });
         });
 
+program
+        .name('zidbush')
+        .description('A CLI tool for managing ZID datasets')
+        .version('1.0.0');
+
 program.command('build')
         .description('Build the ZID dataset')
         .action(async () => {
-                // تنفيذ أمر Node
-                await exec('node --version', (error, stdout, stderr) => {
+                exec('node --version', (error, stdout, stderr) => {
                         if (error) {
                                 console.error(`Error executing build: ${error.message}`);
                                 return;
@@ -99,15 +88,12 @@ program.command('build')
                         }
                         console.log(stdout);
                 });
-
                 try {
-                        await waitForPageLoad('https://example.com');  // انتظر حتى يتم تحميل الموقع
-                        await readStoreAndOpen();  // بعد تحميل الموقع، أكمل تنفيذ العملية
+                        connectToExistingBrowser(theme_market);
                         console.log('Building the ZID dataset...');
                 } catch (error) {
-                        console.error(error);  // في حالة حدوث خطأ أثناء تحميل الصفحة
+                        console.error('Error during the build process:', error);
                 }
         });
-
 
 program.parse(process.argv);
